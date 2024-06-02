@@ -80,7 +80,6 @@
       slurp
       grim
       sox
-      wl-clipboard
       oh-my-zsh
       spotify
       vscode
@@ -123,6 +122,7 @@
     hyprpaper
     pass-secret-service
     killall
+    wl-clipboard
     xdg-desktop-portal-gtk
     xdg-desktop-portal-hyprland
   ];
