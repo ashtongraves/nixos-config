@@ -10,17 +10,20 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = true;
+  services.blueman.enable = true;
+
   zramSwap.enable = true;
 
   home-manager.users.ashton = { pkgs, ... }: {
+    home.stateVersion = "24.05";
     home.pointerCursor = {
       gtk.enable = true;
       package = pkgs.gnome.adwaita-icon-theme;
       name = "Adwaita";
       size = 16;
     };
-    xsession.numlock.enable = true;
-    home.stateVersion = "24.05";
   };
 
   networking.hostName = "bandos";
@@ -31,10 +34,11 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   #services.getty.autoLoginUser = "ashton";
-
   
   services.pipewire = {
     enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
     pulse.enable = true;
     wireplumber.enable = true;
   };
@@ -42,9 +46,14 @@
   services.displayManager.sddm = {
     enable = true;
     wayland.enable = true;
+    autoNumlock = true;
   };
 
-  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+  environment.sessionVariables = rec {
+    NIXOS_OZONE_WL = "1";
+  };
+
+  environment.homeBinInPath = true;
 
   services.dbus = { 
     enable = true;
@@ -53,8 +62,8 @@
 
   services.jack = { 
     jackd.enable = true;
-    alsa.enable = false;
-    loopback.enable = true;
+    alsa.enable = true;
+    #loopback.enable = true;
   };
 
   security.polkit.enable = true;
@@ -63,18 +72,34 @@
     allowUnfree = true;
   };
 
+  #users.users.ashton.packages = with pkgs; [
+  #  (google-chrome.override {
+  #    commandLineArgs = [
+  #      "--enable-features=UseOzonePlatform"
+  #      "--ozone-platform=wayland"
+  #    ];
+  #  })
+  #];
+
   users.users.ashton = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
     shell = pkgs.zsh;
     packages = with pkgs; [
-      google-chrome 
+      google-chrome
+      (google-chrome.override {
+        commandLineArgs = [
+          "--enable-features=UseOzonePlatform"
+          "--ozone-platform=wayland"
+        ];
+      })	
       bitwarden
       vlc
+      appimage-run
       steam
       kitty
+      calibre
       jq
-      wlogout
       wallust
       pqiv
       slurp
@@ -107,7 +132,8 @@
 
   environment.systemPackages = with pkgs; [
     neovim
-    vimPlugins.vim-wayland-clipboard
+    pamixer
+    #blueman
     wget
     pass-secret-service
     git
@@ -115,7 +141,9 @@
     pass
     tree
     zsh
-    vesktop # for audio screensharing for discor
+    dmenu-wayland
+    rofi-wayland
+    vesktop # for audio screensharing for discord
     dunst # for notifications
     networkmanagerapplet
     waybar
@@ -125,15 +153,16 @@
     wl-clipboard
     xdg-desktop-portal-gtk
     xdg-desktop-portal-hyprland
+    pavucontrol # Pulseaudio mixer. Can be used with pipewire. Using to get waybar pulseaudio module working
   ];
 
   fonts = {
     packages = with pkgs; [
       noto-fonts
       noto-fonts-emoji
-      font-awesome
+      font-awesome 
     ];
-    enableDefaultPackages = true;
+    enableDefaultPackages = false;
     fontconfig.defaultFonts = {
       serif = [ "Noto Serif" ];
       sansSerif = [ "Noto Sans" ];
@@ -158,14 +187,11 @@
     vimAlias = true;
     configure = {
       customRC = ''
-        set clipboard=unnamed,unnamedplus
+        set clipboard=unnamedplus
         set number
-        set shiftwidth=1 smarttab
+        set shiftwidth=2 smarttab
         set expandtab
       '';
-      packages.myVimPackage = with pkgs.vimPlugins; {
-        start = [ vim-wayland-clipboard ];
-      };
     };
   };
  
@@ -174,7 +200,10 @@
     xwayland.enable = true;
   };
   
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+  };
+
   xdg.portal = {
     enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
